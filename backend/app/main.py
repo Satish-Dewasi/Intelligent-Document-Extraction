@@ -4,16 +4,24 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.health import router as health_router
+from app.api.v1.documents import router as documents_router
 from app.core.config import settings
 from app.core.logging import setup_logging
+from contextlib import asynccontextmanager
 
 setup_logging()
 
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("NeoStats API started")
+    yield
+
 app = FastAPI(
     title=settings.app_name,
-    version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -29,7 +37,7 @@ app.include_router(
     prefix=settings.api_v1_prefix,
 )
 
-
-@app.on_event("startup")
-def startup_event():
-    logger.info("NeoStats API started")
+app.include_router(
+    documents_router,
+    prefix=settings.api_v1_prefix,
+)
